@@ -13,6 +13,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func connect() (*sql.DB, error) {
@@ -45,14 +48,36 @@ func blogHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(titles)
 }
 
+var (
+	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "wolt_greg_test_processed_ops_total",
+		Help: "The total number of processed events",
+	})
+)
+
+func recordMetrics() {
+	go func() {
+		for {
+			opsProcessed.Inc()
+			time.Sleep(2 * time.Second)
+		}
+	}()
+}
+
 func main() {
+	recordMetrics()
+
 	log.Print("Prepare db...")
 	if err := prepare(); err != nil {
 		log.Fatal(err)
 	}
-
+	
 	log.Print("Listening 8000")
 	r := mux.NewRouter()
+
+	// Prometheus endpoint
+	r.Path("/metrics").Handler(promhttp.Handler())
+
 	r.HandleFunc("/", blogHandler)
 	log.Fatal(http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, r)))
 }

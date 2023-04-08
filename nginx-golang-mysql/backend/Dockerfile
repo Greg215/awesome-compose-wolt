@@ -36,6 +36,8 @@ COPY --from=gloursdocker/docker / /
 
 CMD ["go", "run", "main.go"]
 
+EXPOSE 8000
+
 FROM scratch
 COPY --from=builder /code/bin/backend /usr/local/bin/backend
 CMD ["/usr/local/bin/backend"]

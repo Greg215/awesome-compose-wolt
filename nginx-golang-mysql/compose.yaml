@@ -8,6 +8,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - 8000:8000
+    networks:
+      - app-net
 
   db:
     # We use a mariadb image which supports both amd64 & arm64 architecture
@@ -30,6 +34,8 @@ services:
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
     expose:
       - 3306
+    networks:
+      - app-net
 
   proxy:
     image: nginx
@@ -42,6 +48,12 @@ services:
       - 80:80
     depends_on: 
       - backend
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
 
 volumes:
   db-data:
